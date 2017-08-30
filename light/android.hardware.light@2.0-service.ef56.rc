@@ -40,7 +40,7 @@ on boot
     chown system radio /sys/class/leds/led:rgb_blue/pan_rainbow
     chown system radio /sys/class/leds/led:rgb_blue/pan_rgb_off
 
-service light-hal-2-0 /vendor/bin/hw/android.hardware.light@2.0-service.ef56
+service vendor.light-hal-2-0 /vendor/bin/hw/android.hardware.light@2.0-service.ef56
     interface android.hardware.light@2.0::ILight default 
     class hal
     user system
