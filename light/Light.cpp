@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017 The LineageOS Project
+ * Copyright (C) 2018 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "LightService"
+#define LOG_TAG "android.hardware.light@2.0-service.ef56"
 
 #include <log/log.h>
-
-#include "Light.h"
-
 #include <fstream>
+#include "Light.h"
 
 namespace android {
 namespace hardware {
@@ -28,85 +26,59 @@ namespace light {
 namespace V2_0 {
 namespace implementation {
 
-#define LEDS            "/sys/class/leds/"
-
-#define LCD_LED         LEDS "lcd-backlight/"
-#define BUTTON_LED      LEDS "gpled_0/"
-#define BUTTON1_LED     LEDS "gpled_1/"
-#define BUTTON2_LED     LEDS "gpled_2/"
-#define BUTTON3_LED     LEDS "gpled_3/"
-#define RED_LED         LEDS "led:rgb_red/"
-#define GREEN_LED       LEDS "led:rgb_green/"
-#define BLUE_LED        LEDS "led:rgb_blue/"
-
-#define BRIGHTNESS      "brightness"
+#define LEDS                       "/sys/class/leds/"
+#define LCD_LED                    LEDS "lcd-backlight/"
+#define BUTTON_LED                 LEDS "gpled_0/"
+#define BUTTON1_LED                LEDS "gpled_1/"
+#define BUTTON2_LED                LEDS "gpled_2/"
+#define BUTTON3_LED                LEDS "gpled_3/"
+#define BRIGHTNESS                 "brightness"
 
 /*
  * Write value to path and close file.
  */
 static void set(std::string path, std::string value) {
     std::ofstream file(path);
-    file << value;
+    /* Only write brightness value if stream is open, alive & well */
+    if (file.is_open()) {
+        file << value;
+    } else {
+        /* Fire a warning a bail out */
+        ALOGE("failed to write %s to %s", value.c_str(), path.c_str());
+        return;
+    }
 }
 
 static void set(std::string path, int value) {
     set(path, std::to_string(value));
 }
 
-static void handleBacklight(const LightState& state) {
+/*
+ * Scale each value of the brightness ramp according to the
+ * brightness of the color.
+ */
+
+static void handleBacklight(Type /*type*/, const LightState& state) {
     uint32_t brightness = state.color & 0xFF;
+    brightness *= 16; // HACK
     set(LCD_LED BRIGHTNESS, brightness);
 }
 
-static void handleButtons(const LightState& state) {
+static void handleButtons(Type /*type*/, const LightState& state) {
     uint32_t brightness = state.color & 0xFF;
+    brightness *= 16; // HACK
     set(BUTTON_LED BRIGHTNESS, brightness);
     set(BUTTON1_LED BRIGHTNESS, brightness);
     set(BUTTON2_LED BRIGHTNESS, brightness);
     set(BUTTON3_LED BRIGHTNESS, brightness);
 }
 
-static void handleNotification(const LightState& state) {
-    uint32_t redBrightness, greenBrightness, blueBrightness;
-
-    /*
-     * Extract brightness from AARRGGBB.
-     */
-    redBrightness = (state.color >> 16) & 0xFF;
-    greenBrightness = (state.color >> 8) & 0xFF;
-    blueBrightness = state.color & 0xFF;
-
-    if (state.flashMode != Flash::NONE) {
-        /* Red */
-        set(RED_LED BRIGHTNESS, 1);
-
-        /* Green */
-        set(GREEN_LED BRIGHTNESS, 1);
-
-        /* Blue */
-        set(BLUE_LED BRIGHTNESS, 1);
-    } else {
-        /* Red */
-        set(RED_LED BRIGHTNESS, 0);
-
-        /* Green */
-        set(GREEN_LED BRIGHTNESS, 0);
-
-        /* Blue */
-        set(BLUE_LED BRIGHTNESS, 0);
-    }
-
-    set(RED_LED BRIGHTNESS, redBrightness);
-    set(GREEN_LED BRIGHTNESS, greenBrightness);
-    set(BLUE_LED BRIGHTNESS, blueBrightness);
-}
-
-static std::map<Type, std::function<void(const LightState&)>> lights = {
+/*
+ * Keep sorted in the order of importance.
+ */
+static std::map<Type, std::function<void(Type type, const LightState&)>> lights = {
     {Type::BACKLIGHT, handleBacklight},
     {Type::BUTTONS, handleButtons},
-    {Type::BATTERY, handleNotification},
-    {Type::NOTIFICATIONS, handleNotification},
-    {Type::ATTENTION, handleNotification},
 };
 
 Light::Light() {}
@@ -121,10 +93,9 @@ Return<Status> Light::setLight(Type type, const LightState& state) {
     /*
      * Lock global mutex until light state is updated.
      */
+
     std::lock_guard<std::mutex> lock(globalLock);
-
-    it->second(state);
-
+    it->second(type, state);
     return Status::SUCCESS;
 }
 
