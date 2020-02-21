@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2011 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 
@@ -23,7 +24,7 @@ static uint8_t pn544_eedata_settings[][4] = {
     // DIFFERENTIAL_ANTENNA
 
     // RF Settings
-    {0x00,0x9B,0xD1,0x0D} // Tx consumption higher than 0x0D (average 50mA)
+     {0x00,0x9B,0xD1,0x0D} // Tx consumption higher than 0x0D (average 50mA)
     ,{0x00,0x9B,0xD2,0x24} // GSP setting for this threshold
     ,{0x00,0x9B,0xD3,0x0A} // Tx consumption higher than 0x0A (average 40mA)
     ,{0x00,0x9B,0xD4,0x22} // GSP setting for this threshold
@@ -73,16 +74,16 @@ static uint8_t pn544_eedata_settings[][4] = {
     ,{0x00,0x98,0xA2,0x08} // Set to 0x08 as required by [digital] (default value: 09)
 
     //SE GPIO
-    ,{0x00, 0x98, 0x93, 0x40}
+    ,{0x00,0x98,0x93,0x40}
 
     // Set NFCT ATQA
-    ,{0x00, 0x98, 0x7D, 0x02}
-    ,{0x00, 0x98, 0x7E, 0x00}
+    ,{0x00,0x98,0x7D,0x02}
+    ,{0x00,0x98,0x7E,0x00}
 
     // Enable CEA detection mechanism
-    ,{0x00, 0x9F, 0xC8, 0x01}
+    ,{0x00,0x9F,0xC8,0x01}
     // Set NFC-F poll RC=0x00
-    ,{0x00, 0x9F, 0x9A, 0x00}
+    ,{0x00,0x9F,0x9A,0x00}
     // Setting for EMD support for ISO 14443-4 Reader
     ,{0x00,0x9F,0x09,0x00} // 0x00 - Disable EMD support, 0x01 - Enable EMD support
 };
@@ -126,10 +127,10 @@ static struct hw_module_methods_t nfc_module_methods = {
 struct nfc_module_t HAL_MODULE_INFO_SYM = {
     .common = {
         .tag = HARDWARE_MODULE_TAG,
-        .version_major = 1,
-        .version_minor = 0,
+        .module_api_version = 1,
+        .hal_api_version = HARDWARE_HAL_API_VERSION,
         .id = NFC_HARDWARE_MODULE_ID,
-        .name = "Find7 NFC HW HAL",
+        .name = "ef56 NFC HW HAL",
         .author = "The Android Open Source Project",
         .methods = &nfc_module_methods,
     },

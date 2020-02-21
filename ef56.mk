@@ -29,5 +29,10 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
      android.hardware.light@2.0-service.ef56
 
+# NFC
+PRODUCT_PACKAGES += \
+	nfc.msm8974 \
+	libpn544_fw
+
 # Inherit from msm8974-common
 $(call inherit-product, device/pantech/msm8974-common/msm8974.mk)
