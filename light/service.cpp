@@ -36,6 +36,9 @@ const static std::string kButton1BacklightPath = "/sys/class/leds/gpled_0/bright
 const static std::string kButton2BacklightPath = "/sys/class/leds/gpled_1/brightness";
 const static std::string kButton3BacklightPath = "/sys/class/leds/gpled_2/brightness";
 const static std::string kButton4BacklightPath = "/sys/class/leds/gpled_3/brightness";
+const static std::string kRedLedPath = "/sys/class/leds/led:rgb_red/brightness";
+const static std::string kGreenLedPath = "/sys/class/leds/led:rgb_green/brightness";
+const static std::string kBlueLedPath = "/sys/class/leds/led:rgb_blue/brightness";
 
 int main() {
     uint32_t lcdMaxBrightness = 255;
@@ -67,31 +70,52 @@ int main() {
 
     std::ofstream button2Backlight(kButton2BacklightPath);
     if (button2Backlight) {
-        buttonBacklight.emplace_back(std::move(button1Backlight));
+        buttonBacklight.emplace_back(std::move(button2Backlight));
     } else {
-        LOG(WARNING) << "Failed to open " << kButton1BacklightPath << ", error=" << errno
+        LOG(WARNING) << "Failed to open " << kButton2BacklightPath << ", error=" << errno
                      << " (" << strerror(errno) << ")";
     }
 
     std::ofstream button3Backlight(kButton3BacklightPath);
     if (button3Backlight) {
-        buttonBacklight.emplace_back(std::move(button1Backlight));
+        buttonBacklight.emplace_back(std::move(button3Backlight));
     } else {
-        LOG(WARNING) << "Failed to open " << kButton1BacklightPath << ", error=" << errno
+        LOG(WARNING) << "Failed to open " << kButton3BacklightPath << ", error=" << errno
                      << " (" << strerror(errno) << ")";
     }
 
     std::ofstream button4Backlight(kButton4BacklightPath);
     if (button4Backlight) {
-        buttonBacklight.emplace_back(std::move(button1Backlight));
+        buttonBacklight.emplace_back(std::move(button4Backlight));
     } else {
-        LOG(WARNING) << "Failed to open " << kButton1BacklightPath << ", error=" << errno
+        LOG(WARNING) << "Failed to open " << kButton4BacklightPath << ", error=" << errno
                      << " (" << strerror(errno) << ")";
     }
 
+    std::ofstream redLed(kRedLedPath);
+    if (!redLed) {
+        LOG(ERROR) << "Failed to open " << kRedLedPath << ", error=" << errno
+                   << " (" << strerror(errno) << ")";
+        return -errno;
+    }
+
+    std::ofstream greenLed(kGreenLedPath);
+    if (!greenLed) {
+        LOG(ERROR) << "Failed to open " << kGreenLedPath << ", error=" << errno
+                   << " (" << strerror(errno) << ")";
+        return -errno;
+    }
+
+    std::ofstream blueLed(kBlueLedPath);
+    if (!blueLed) {
+        LOG(ERROR) << "Failed to open " << kBlueLedPath << ", error=" << errno
+                   << " (" << strerror(errno) << ")";
+        return -errno;
+    }
 
     android::sp<ILight> service = new Light(
-            {std::move(lcdBacklight), lcdMaxBrightness}, std::move(buttonBacklight));
+            {std::move(lcdBacklight), lcdMaxBrightness}, std::move(buttonBacklight),
+            std::move(redLed), std::move(greenLed), std::move(blueLed));
 
     configureRpcThreadpool(1, true);
 

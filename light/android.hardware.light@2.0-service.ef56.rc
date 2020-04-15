@@ -1,16 +1,44 @@
-on boot
-
-    # Buttons LED
-
-    chown system radio /sys/class/leds/gpled_0/brightness
-    chown system radio /sys/class/leds/gpled_1/brightness
-    chown system radio /sys/class/leds/gpled_2/brightness
-    chown system radio /sys/class/leds/gpled_3/brightness
+on boot 
 
     chmod 0660 /sys/class/leds/gpled_0/brightness
     chmod 0660 /sys/class/leds/gpled_1/brightness
     chmod 0660 /sys/class/leds/gpled_2/brightness
     chmod 0660 /sys/class/leds/gpled_3/brightness
+    
+    chown system radio /sys/class/leds/led:rgb_red/brightness
+    chown system radio /sys/class/leds/led:rgb_green/brightness
+    chown system radio /sys/class/leds/led:rgb_blue/brightness
+    chown system radio /sys/class/leds/gpled_0/brightness
+    chown system radio /sys/class/leds/gpled_1/brightness
+    chown system radio /sys/class/leds/gpled_2/brightness
+    chown system radio /sys/class/leds/gpled_3/brightness
+
+    chown system radio /sys/class/leds/led:rgb_red/brightness
+    chown system radio /sys/class/leds/led:rgb_red/blink
+    chown system radio /sys/class/leds/led:rgb_red/pan_blink
+    chown system radio /sys/class/leds/led:rgb_red/pan_brightness
+    chown system radio /sys/class/leds/led:rgb_red/pan_loop
+    chown system radio /sys/class/leds/led:rgb_red/pan_oneshot
+    chown system radio /sys/class/leds/led:rgb_red/pan_rainbow
+    chown system radio /sys/class/leds/led:rgb_red/pan_rgb_off
+
+    chown system radio /sys/class/leds/led:rgb_green/brightness
+    chown system radio /sys/class/leds/led:rgb_green/blink
+    chown system radio /sys/class/leds/led:rgb_green/pan_blink
+    chown system radio /sys/class/leds/led:rgb_green/pan_brightness
+    chown system radio /sys/class/leds/led:rgb_green/pan_loop
+    chown system radio /sys/class/leds/led:rgb_green/pan_oneshot
+    chown system radio /sys/class/leds/led:rgb_green/pan_rainbow
+    chown system radio /sys/class/leds/led:rgb_green/pan_rgb_off
+
+    chown system radio /sys/class/leds/led:rgb_blue/brightness
+    chown system radio /sys/class/leds/led:rgb_blue/blink
+    chown system radio /sys/class/leds/led:rgb_blue/pan_blink
+    chown system radio /sys/class/leds/led:rgb_blue/pan_brightness
+    chown system radio /sys/class/leds/led:rgb_blue/pan_loop
+    chown system radio /sys/class/leds/led:rgb_blue/pan_oneshot
+    chown system radio /sys/class/leds/led:rgb_blue/pan_rainbow
+    chown system radio /sys/class/leds/led:rgb_blue/pan_rgb_off
 
 service light-hal-2-0 /vendor/bin/hw/android.hardware.light@2.0-service.ef56
     interface android.hardware.light@2.0::ILight default 

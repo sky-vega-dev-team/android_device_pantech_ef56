@@ -59,13 +59,23 @@ namespace V2_0 {
 namespace implementation {
 
 Light::Light(std::pair<std::ofstream, uint32_t>&& lcd_backlight,
-             std::vector<std::ofstream>&& button_backlight)
+             std::vector<std::ofstream>&& button_backlight, std::ofstream&& red_led, std::ofstream&& green_led, std::ofstream&& blue_led)
     : mLcdBacklight(std::move(lcd_backlight)),
-      mButtonBacklight(std::move(button_backlight)) {
+      mButtonBacklight(std::move(button_backlight)),
+      mRedLed(std::move(red_led)),
+      mGreenLed(std::move(green_led)),
+      mBlueLed(std::move(blue_led)) {
+    auto attnFn(std::bind(&Light::setAttentionLight, this, std::placeholders::_1));
     auto backlightFn(std::bind(&Light::setLcdBacklight, this, std::placeholders::_1));
     auto buttonsFn(std::bind(&Light::setButtonsBacklight, this, std::placeholders::_1));
+    auto batteryFn(std::bind(&Light::setBatteryLight, this, std::placeholders::_1));
+    auto notifFn(std::bind(&Light::setNotificationLight, this, std::placeholders::_1));
+    mLights.emplace(std::make_pair(Type::ATTENTION, attnFn));
     mLights.emplace(std::make_pair(Type::BACKLIGHT, backlightFn));
     mLights.emplace(std::make_pair(Type::BUTTONS, buttonsFn));
+    mLights.emplace(std::make_pair(Type::BATTERY, batteryFn));
+    mLights.emplace(std::make_pair(Type::NOTIFICATIONS, notifFn));
+
 }
 
 // Methods from ::android::hardware::light::V2_0::ILight follow.
@@ -93,6 +103,12 @@ Return<void> Light::getSupportedTypes(getSupportedTypes_cb _hidl_cb) {
     return Void();
 }
 
+void Light::setAttentionLight(const LightState& state) {
+    std::lock_guard<std::mutex> lock(mLock);
+    mAttentionState = state;
+    setSpeakerBatteryLightLocked();
+}
+
 void Light::setLcdBacklight(const LightState& state) {
     std::lock_guard<std::mutex> lock(mLock);
 
@@ -117,6 +133,69 @@ void Light::setButtonsBacklight(const LightState& state) {
     for (auto& button : mButtonBacklight) {
         button << brightness << std::endl;
     }
+}
+
+void Light::setBatteryLight(const LightState& state) {
+    std::lock_guard<std::mutex> lock(mLock);
+    mBatteryState = state;
+    setSpeakerBatteryLightLocked();
+}
+
+void Light::setNotificationLight(const LightState& state) {
+    std::lock_guard<std::mutex> lock(mLock);
+    mNotificationState = state;
+    setSpeakerBatteryLightLocked();
+}
+
+void Light::setSpeakerBatteryLightLocked() {
+    if (isLit(mNotificationState)) {
+        setSpeakerLightLocked(mNotificationState);
+    } else if (isLit(mAttentionState)) {
+        setSpeakerLightLocked(mAttentionState);
+    } else if (isLit(mBatteryState)) {
+        setSpeakerLightLocked(mBatteryState);
+    } else {
+        // Lights off
+        mRedLed << 0 << std::endl;
+        mGreenLed << 0 << std::endl;
+        mBlueLed << 0 << std::endl;
+    }
+}
+
+void Light::setSpeakerLightLocked(const LightState& state) {
+    int red, green, blue;
+    uint32_t alpha;
+
+    // Extract brightness from AARRGGBB
+    alpha = (state.color >> 24) & 0xff;
+
+    // Retrieve each of the RGB colors
+    red = (state.color >> 16) & 0xff;
+    green = (state.color >> 8) & 0xff;
+    blue = state.color & 0xff;
+
+    // Scale RGB colors if a brightness has been applied by the user
+    if (alpha != 0xff) {
+        red = (red * alpha) / 0xff;
+        green = (green * alpha) / 0xff;
+        blue = (blue * alpha) / 0xff;
+    }
+
+    switch (state.flashMode) {
+        case Flash::NONE:
+            mRedLed << 1 << std::endl;
+            mGreenLed << 1 << std::endl;
+            mBlueLed << 1 << std::endl;
+            break;
+        default:
+            mRedLed << 0 << std::endl;
+            mGreenLed << 0 << std::endl;
+            mBlueLed << 0 << std::endl;
+            break;
+    }
+    mRedLed << red << std::endl;
+    mGreenLed << green << std::endl;
+    mBlueLed << blue << std::endl;
 }
 
 }  // namespace implementation
